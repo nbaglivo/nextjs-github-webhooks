@@ -1,0 +1,61 @@
+{
+  "name": "nextjs-github-webhooks",
+  "version": "1.0.0",
+  "description": "Lightweight integration for GitHub webhooks in Next.js",
+  "license": "MIT",
+  "author": "Nicolas Baglivo <nicolas.baglivo@gmail.com> (https://nbaglivo.dev)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "pnpm run build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nbaglivo/nextjs-github-webhooks.git"
+  },
+  "bugs": "https://github.com/nbaglivo/nextjs-github-webhooks/issues",
+  "homepage": "https://github.com/nbaglivo/nextjs-github-webhooks#readme",
+  "keywords": [
+    "nextjs",
+    "next",
+    "github",
+    "webhooks",
+    "webhook",
+    "api-route"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "next": ">=14"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": false
+    }
+  },
+  "devDependencies": {
+    "next": "16.2.1-canary.2",
+    "typescript": "^5",
+    "vitest": "^2"
+  },
+  "dependencies": {
+    "@octokit/webhooks": "^14.2.0",
+    "octokit": "^5.0.5"
+  }
+}
