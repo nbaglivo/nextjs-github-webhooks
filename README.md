@@ -1,15 +1,15 @@
-# @sourceflow/nextjs-github-webhooks
+# nextjs-github-webhooks
 
 A lightweight integration for handling GitHub webhooks in your Next.js App Router application.
 
 ## Installation
 
 ```bash
-pnpm add @sourceflow/nextjs-github-webhooks
+pnpm add nextjs-github-webhooks
 # or
-npm install @sourceflow/nextjs-github-webhooks
+npm install nextjs-github-webhooks
 # or
-yarn add @sourceflow/nextjs-github-webhooks
+yarn add nextjs-github-webhooks
 ```
 
 ## Setup
@@ -19,8 +19,8 @@ yarn add @sourceflow/nextjs-github-webhooks
 Create a route handler (e.g. `app/api/webhooks/github/route.ts`) and use `createGitHubWebhookHandler`:
 
 ```ts
-import { createGitHubWebhookHandler } from "@sourceflow/nextjs-github-webhooks";
-import type { WebhookContext, PushPayload } from "@sourceflow/nextjs-github-webhooks";
+import { createGitHubWebhookHandler } from "nextjs-github-webhooks";
+import type { WebhookContext, PushPayload } from "nextjs-github-webhooks";
 
 const handler = createGitHubWebhookHandler({
   secret: process.env.GITHUB_WEBHOOK_SECRET!,
