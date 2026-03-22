@@ -1,4 +1,6 @@
-# nextjs-github-webhooks
+<img src="./logo.svg" alt="nextjs-github-webhooks logo" width="80" height="80" />  
+
+# nextjs-github-webhooks  
 
 A lightweight integration for handling GitHub webhooks in your Next.js App Router application.
 
