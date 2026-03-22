@@ -1,6 +1,6 @@
 {
   "name": "nextjs-github-webhooks",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Lightweight integration for GitHub webhooks in Next.js",
   "license": "MIT",
   "author": "Nicolas Baglivo <nicolas.baglivo@gmail.com> (https://nbaglivo.dev)",

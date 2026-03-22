@@ -37,17 +37,9 @@ const handler = createGitHubWebhookHandler({
 export const POST = handler;
 ```
 
-### 2. Configure your GitHub webhook
+### 2. Environment variable
 
-1. Go to your repository **Settings → Webhooks → Add webhook**
-2. Set **Payload URL** to your route, e.g. `https://your-domain.com/api/webhooks/github`
-3. Choose **Content type**: `application/json`
-4. Generate and set a **Secret** – store it in `GITHUB_WEBHOOK_SECRET` (or your chosen env var)
-5. Select the events you want to receive, or use **Just the push event** for minimal setup
-
-### 3. Environment variable
-
-Add your webhook secret to `.env.local`:
+Add your GitHub webhook secret to `.env.local`:
 
 ```env
 GITHUB_WEBHOOK_SECRET=your_webhook_secret_here
