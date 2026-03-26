@@ -47,6 +47,14 @@ Add your GitHub webhook secret to `.env.local`:
 GITHUB_WEBHOOK_SECRET=your_webhook_secret_here
 ```
 
+## Payload validation
+
+This library verifies the **HMAC signature** (`X-Hub-Signature-256`) against the raw request body so only requests that match your GitHub webhook secret are accepted. It does **not** run runtime schema validation on the parsed JSON (for example with Zod or similar).
+
+**Why:** A schema layer would add dependencies and ongoing maintenance beyond what `@octokit/webhooks` already provides as TypeScript types. For signed webhooks, the practical trust boundary is authenticity: the payload is what GitHub sent for that delivery.
+
+**If you want to be extra defensive**—for example strict checks before branching on nested fields, compliance requirements, or guarding against unexpected shapes—validate `ctx.payload` inside your own handlers using whatever fits your project (Zod, manual guards, etc.). That stays optional and avoids pulling validation libraries into every consumer.
+
 ## API
 
 ### `createGitHubWebhookHandler(options)`
@@ -97,11 +105,12 @@ handlers: {
 
 ## Responses
 
-| Status | Condition                         |
-| ------ | --------------------------------- |
-| `400`  | Missing headers (`x-hub-signature-256`, `x-github-event`, or `x-github-delivery`) |
-| `401`  | Invalid signature                 |
-| `200`  | Webhook processed successfully   |
+| Status | Condition |
+| ------ | --------- |
+| `400`  | Missing required headers (`x-hub-signature-256`, `x-github-event`, or `x-github-delivery`), or body is not valid JSON |
+| `401`  | Invalid signature |
+| `500`  | A registered handler threw or rejected |
+| `200`  | Webhook processed successfully |
 
 ## License
 

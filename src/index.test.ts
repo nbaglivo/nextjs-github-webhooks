@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createGitHubWebhookHandler } from "./index";
 
-const { mockVerifyAndReceive, mockHandlers } = vi.hoisted(() => ({
-  mockVerifyAndReceive: vi.fn(),
+const { mockVerify, mockReceive, mockHandlers } = vi.hoisted(() => ({
+  mockVerify: vi.fn(),
+  mockReceive: vi.fn(),
   mockHandlers: {} as Record<string, (evt: { id: string; payload: unknown }) => void>,
 }));
 
@@ -11,7 +12,8 @@ vi.mock("@octokit/webhooks", () => ({
     on: vi.fn((event: string, fn: (evt: { id: string; payload: unknown }) => void) => {
       mockHandlers[event] = fn;
     }),
-    verifyAndReceive: mockVerifyAndReceive,
+    verify: mockVerify,
+    receive: mockReceive,
   })),
 }));
 
@@ -41,7 +43,8 @@ describe("createGitHubWebhookHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     Object.keys(mockHandlers).forEach((k) => delete mockHandlers[k]);
-    mockVerifyAndReceive.mockResolvedValue(undefined);
+    mockVerify.mockResolvedValue(true);
+    mockReceive.mockResolvedValue(undefined);
   });
 
   it("returns 400 when x-hub-signature-256 header is missing", async () => {
@@ -56,7 +59,7 @@ describe("createGitHubWebhookHandler", () => {
 
     expect(res.status).toBe(400);
     expect(data).toEqual({ error: "Missing headers" });
-    expect(mockVerifyAndReceive).not.toHaveBeenCalled();
+    expect(mockVerify).not.toHaveBeenCalled();
   });
 
   it("returns 400 when x-github-event header is missing", async () => {
@@ -71,7 +74,7 @@ describe("createGitHubWebhookHandler", () => {
 
     expect(res.status).toBe(400);
     expect(data).toEqual({ error: "Missing headers" });
-    expect(mockVerifyAndReceive).not.toHaveBeenCalled();
+    expect(mockVerify).not.toHaveBeenCalled();
   });
 
   it("returns 400 when x-github-delivery header is missing", async () => {
@@ -86,11 +89,11 @@ describe("createGitHubWebhookHandler", () => {
 
     expect(res.status).toBe(400);
     expect(data).toEqual({ error: "Missing headers" });
-    expect(mockVerifyAndReceive).not.toHaveBeenCalled();
+    expect(mockVerify).not.toHaveBeenCalled();
   });
 
-  it("returns 401 when verifyAndReceive throws (invalid signature)", async () => {
-    mockVerifyAndReceive.mockRejectedValueOnce(new Error("Invalid signature"));
+  it("returns 401 when verify returns false (signature does not match)", async () => {
+    mockVerify.mockResolvedValueOnce(false);
     const handler = createGitHubWebhookHandler({
       secret: "test-secret",
       handlers: {},
@@ -101,12 +104,36 @@ describe("createGitHubWebhookHandler", () => {
 
     expect(res.status).toBe(401);
     expect(data).toEqual({ error: "Invalid signature" });
-    expect(mockVerifyAndReceive).toHaveBeenCalledWith({
-      id: "delivery-123",
-      name: "push",
-      signature: "sha256=abc",
-      payload: '{"ref":"refs/heads/main"}',
+    expect(mockVerify).toHaveBeenCalledWith('{"ref":"refs/heads/main"}', "sha256=abc");
+    expect(mockReceive).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when body is not valid JSON", async () => {
+    const handler = createGitHubWebhookHandler({
+      secret: "test-secret",
+      handlers: {},
     });
+
+    const res = await handler(createRequest({ body: "{not-json" }));
+    const data = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(data).toEqual({ error: "Invalid JSON payload" });
+    expect(mockReceive).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 when receive rejects because a handler failed", async () => {
+    mockReceive.mockRejectedValueOnce(new Error("database unavailable"));
+    const handler = createGitHubWebhookHandler({
+      secret: "test-secret",
+      handlers: {},
+    });
+
+    const res = await handler(createRequest());
+    const data = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(data).toEqual({ error: "Webhook handler failed" });
   });
 
   it("returns 200 with received: true when signature is valid", async () => {
@@ -124,9 +151,9 @@ describe("createGitHubWebhookHandler", () => {
 
   it("invokes the registered handler with id and payload when event is received", async () => {
     const pushHandler = vi.fn().mockResolvedValue(undefined);
-    mockVerifyAndReceive.mockImplementation(async (opts: { id: string; name: string; payload: string }) => {
-      const handler = mockHandlers[opts.name];
-      if (handler) await handler({ id: opts.id, payload: JSON.parse(opts.payload) });
+    mockReceive.mockImplementation(async (evt: { id: string; name: string; payload: unknown }) => {
+      const fn = mockHandlers[evt.name];
+      if (fn) await fn({ id: evt.id, payload: evt.payload });
     });
 
     const handler = createGitHubWebhookHandler({

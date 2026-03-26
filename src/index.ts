@@ -29,17 +29,32 @@ export function createGitHubWebhookHandler(options: Options) {
 
         const body = await req.text();
 
-        try {
-            await webhooks.verifyAndReceive({
-                id: delivery,
-                name: event,
-                signature,
-                payload: body,
-            });
-        } catch {
+        // https://github.com/octokit/webhooks.js#webhooksverify
+        if (!(await webhooks.verify(body, signature))) {
             return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
         }
 
+        let payload: unknown;
+        try {
+            payload = JSON.parse(body);
+        } catch {
+            return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+        }
+
+        // https://github.com/octokit/webhooks.js#webhooksreceive
+        try {
+            await webhooks.receive({
+                id: delivery,
+                name: event as any,
+                payload: payload as any,
+            });
+        } catch {
+            return NextResponse.json(
+                { error: "Webhook handler failed" },
+                { status: 500 }
+            );
+        }
+
         return NextResponse.json({ received: true });
-    }
+    };
 }
