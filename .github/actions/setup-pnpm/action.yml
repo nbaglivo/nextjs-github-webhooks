@@ -1,0 +1,38 @@
+name: Setup pnpm
+description: pnpm 9, Node (configurable), and frozen lockfile install — run actions/checkout before this action
+
+inputs:
+  node-version:
+    description: Node.js version (default 22; Trusted Publishing on npm requires >= 22.14.0)
+    required: false
+    default: '22'
+  registry-url:
+    description: Optional npm registry URL (e.g. https://registry.npmjs.org for publishing)
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Setup Node.js
+      if: ${{ inputs.registry-url == '' }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Setup Node.js (npm registry)
+      if: ${{ inputs.registry-url != '' }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+        registry-url: ${{ inputs.registry-url }}
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
